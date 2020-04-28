@@ -1,6 +1,21 @@
 # I apologize for ever doubting MatLabs credibility as a programming language
-import time
 from math import sqrt, atan2
+
+
+class Player:
+    def __init__(self, pos):
+        self.x = pos[0]
+        self.y = pos[1]
+
+    def get_dist(self, point_x, point_y):
+        """Gets distance between player and a point"""
+        dist = sqrt((point_x - self.x) ** 2 + (point_y - self.y) ** 2)
+        return dist
+
+    def get_angle(self, point_x, point_y):
+        """Gets angle between player and a point in RAD"""
+        angle = atan2(point_y - self.y, point_x - self.x)
+        return angle
 
 
 def zeros_matrix(rows, cols):
@@ -166,6 +181,7 @@ def return_count(dict):
 
 
 def solution(dimensions, your_position, guard_position, distance):
+
     # Makes a matrix by using room dims
     start_time = time.time()
     matrix = [[0 for _ in xrange(dimensions[0] + 1)] for _ in xrange(
@@ -247,12 +263,12 @@ captain_position = [1000, 1000]
 badguy_position = [500, 400]
 distance = 10000
 # 204 sec and result of 196
-# new code 183 secs
+# v0.2 183 secs and result of 196
 
-
+import time
 
 print solution(dimensions, captain_position, badguy_position, distance)
-# print(solution([1250, 1250], [1000, 1000], [500, 400], 10000))
+
 
 
 

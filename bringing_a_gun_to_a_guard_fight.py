@@ -1,5 +1,5 @@
 # I apologize for ever doubting MatLabs credibility as a programming language
-
+import time
 from math import sqrt, atan2
 
 
@@ -84,18 +84,17 @@ def get_max_matrix(matrix, max_row, max_col):
 
 
 def filter_target_hit(matrix, player_col, player_row, max_distance):
-    target = []
+    target = {}
     for i in range(len(matrix)):
         dist = sqrt((matrix[i][1] - player_row) ** 2 + (matrix[i][0] -
         player_col) ** 2)
         angle = atan2(matrix[i][1] - player_row, matrix[i][0] - player_col)
-        if max_distance > dist > 0:
-            target.append([matrix[i], dist, angle])
+        test_a = max_distance > dist > 0
+        test_b = angle not in target
+        test_c = angle in target and dist < target[angle][1]
+        if test_a and (test_b or test_c):
+            target[angle] = [matrix[i], dist]
 
-    for m in range(len(target)):
-        for n in range(len(target)):
-            if target[m][2] == target[n][2] and target[m][1] > target[n][1]:
-                target[m][0][2] = 0
     return target
 
 
@@ -105,11 +104,10 @@ def get_pos(matrix, pos, max_distance):
     target = []
     for i in range(len(matrix)):
         for j in range(len(matrix[0])):
-            dist = sqrt((i - pos[0]) ** 2 + (j - pos[1]) ** 2)
-            test_a = dist < max_distance
-            test_b = matrix[i][j] == 7 or matrix[i][j] == 1
-            if test_a and test_b:
-                target.append([j, i, matrix[i][j]])
+            if matrix[i][j] == 7 or matrix[i][j] == 1:
+                dist = sqrt((i - pos[0]) ** 2 + (j - pos[1]) ** 2)
+                if dist < max_distance:
+                    target.append([j, i, matrix[i][j]])
     return target
 
 
@@ -159,24 +157,28 @@ def trim(matrix, max_col, max_row):
     return matrix
 
 
-def return_count(matrix):
+def return_count(dict):
     count = 0
-    for i in range(len(matrix)):
-        if matrix[i][0][2] == 7:
+    for key in dict:
+        if dict[key][0][2] == 7:
             count += 1
     return count
 
 
 def solution(dimensions, your_position, guard_position, distance):
     # Makes a matrix by using room dims
-
+    start_time = time.time()
     matrix = [[0 for _ in xrange(dimensions[0] + 1)] for _ in xrange(
         dimensions[1] + 1)]
+    print("step 1: --- %s seconds ---" % (time.time() - start_time))
 
+    start_time = time.time()
     # Places the player and the guard position in the room
     matrix[your_position[1]][your_position[0]] = 1
     matrix[guard_position[1]][guard_position[0]] = 7
+    print("step 2: --- %s seconds ---" % (time.time() - start_time))
 
+    start_time = time.time()
     # Max possible rows and columns to a matrix, (your pos + distance)
     max_row = (your_position[1]) + distance + 1
     max_col = (your_position[0]) + distance + 1
@@ -184,33 +186,33 @@ def solution(dimensions, your_position, guard_position, distance):
     # Get a gird for the 1th quadrant.
     final_grid = get_max_matrix(matrix, max_row, max_col)
     final_grid = trim(final_grid, max_col, max_row)
+    print("step 3: --- %s seconds ---" % (time.time() - start_time))
 
+    start_time = time.time()
     # Get all position in all quadrants
     first_q_pos = get_pos(final_grid, your_position, distance)
     q2, q3, q4 = other_quadrants(first_q_pos, your_position, distance)
     final_list = first_q_pos + q2 + q3 + q4
+    print("step 4: --- %s seconds ---" % (time.time() - start_time))
 
+    start_time = time.time()
     # Filters the Original player, and all unattainable guards
-    final_matrix = filter_target_hit(final_list, your_position[0],
-                                     your_position[1], distance)
-    count = return_count(final_matrix)
+    final_dict = filter_target_hit(final_list, your_position[0],
+                                   your_position[1], distance)
+
+    count = return_count(final_dict)
+    print("step 4: --- %s seconds ---" % (time.time() - start_time))
     return count
 
 
+# Test cases found online
 
-
-
-# dimensions = [23, 10]
-# captain_position = [6, 4]
-# badguy_position = [3, 2]
-# distance = 23
-
-
-dimensions = [10, 10]
-captain_position = [4, 4]
-badguy_position = [3, 3]
-distance = 5000
-# REAL answer = 739323
+#
+# dimensions = [10, 10]
+# captain_position = [4, 4]
+# badguy_position = [3, 3]
+# distance = 5000
+# # REAL answer = 739323
 
 
 
@@ -234,22 +236,23 @@ distance = 5000
 
 
 # dimensions = [3, 2]
-# captain_position = [1, 2]
+# captain_position = [1, 1]
 # badguy_position = [2, 1]
 # distance = 4
 # 0 secs and result 7
 
 
-# dimensions =1250, 1250],
-# captain_position = [1000, 1000]
-# badguy_position = [500, 400]
-# distance = 10000
+dimensions = [1250, 1250]
+captain_position = [1000, 1000]
+badguy_position = [500, 400]
+distance = 10000
 # 204 sec and result of 196
+# new code 183 secs
 
-import time
-start_time = time.time()
+
+
 print solution(dimensions, captain_position, badguy_position, distance)
 # print(solution([1250, 1250], [1000, 1000], [500, 400], 10000))
-print("--- %s seconds ---" % (time.time() - start_time))
+
 
 

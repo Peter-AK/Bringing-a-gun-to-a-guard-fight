@@ -1,101 +1,116 @@
 # I apologize for ever doubting MatLabs credibility as a programming language
-from math import sqrt, atan2
+from math import sqrt, atan2, ceil
+from copy import deepcopy
 
 
-class Player:
-    def __init__(self, pos):
-        self.x = pos[0]
-        self.y = pos[1]
+class Room:
+    def __init__(self, dim, pos, guard_pos, distance):
+        self.room_x = dim[0]
+        self.room_y = dim[1]
+        self.player_x = pos[0]
+        self.player_y = pos[1]
+        self.guard_x = guard_pos[0]
+        self.guard_y = guard_pos[1]
+        self.max_distance = distance
+        self.max_x = self.player_x + distance + 1
+        self.max_y = self.player_y + distance + 1
 
     def get_dist(self, point_x, point_y):
         """Gets distance between player and a point"""
-        dist = sqrt((point_x - self.x) ** 2 + (point_y - self.y) ** 2)
+        dist = sqrt((point_x - self.player_x) ** 2 + (point_y -
+                                                      self.player_y) ** 2)
         return dist
 
     def get_angle(self, point_x, point_y):
         """Gets angle between player and a point in RAD"""
-        angle = atan2(point_y - self.y, point_x - self.x)
+        angle = atan2(point_y - self.player_y, point_x - self.player_x)
         return angle
 
+    def get_first_quadrant(self):
+        """gets the number of copies that need to be done along the axis
+        and gets all the guard and player coords"""
+        num_copies_x = ceil(self.max_x / self.room_x)
+        num_copies_x = int(num_copies_x)
+        num_copies_y = ceil(self.max_y / self.room_y)
+        num_copies_y = int(num_copies_y)
 
-def zeros_matrix(rows, cols):
-    """
-    Creates a matrix filled with zeros.
-        :param rows: the number of rows the matrix should have
-        :param cols: the number of columns the matrix should have
+        player_exp_x = []
+        player_exp_y = []
+        guard_exp_x = []
+        guard_exp_y = []
+        # Loop expands along the x axies
+        for i in range(0, num_copies_x + 1, 1):
+            temp_player_y_list = []
+            temp_guard_y_list = []
+            r_x = self.room_x * i
 
-        :return: list of lists that form the matrix
-    """
-    M = []
-    while len(M) < rows:
-        M.append([])
-        while len(M[-1]) < cols:
-            M[-1].append(0)
+            if len(player_exp_x) == 0:
+                n_p_p_x = self.player_x
+            else:
+                n_p_p_x = (r_x - player_exp_x[-1][0]) + r_x
+            player_exp_x.append([n_p_p_x, self.player_y, 1])
 
-    return M
+            if len(guard_exp_x) == 0:
+                n_g_p_x = self.guard_x
+            else:
+                n_g_p_x = (r_x - guard_exp_x[-1][0]) + r_x
+            guard_exp_x.append([n_g_p_x, self.guard_y, 7])
+            #
+            for j in range(1, num_copies_y + 1, 1):
+                r_y = self.room_y * j
+                if len(temp_guard_y_list) == 0:
+                    n_g_p_y = (r_y - self.guard_y) + r_y
+                    temp_guard_y_list.append(n_g_p_y)
+                else:
+                    n_g_p_y = (r_y - temp_guard_y_list[-1]) + r_y
+                    temp_guard_y_list.append(n_g_p_y)
+                guard_exp_y.append([n_g_p_x, n_g_p_y, 7])
 
+                if len(temp_player_y_list) == 0:
+                    n_p_p_y = (r_y - self.player_y) + r_y
+                    temp_player_y_list.append(n_p_p_y)
+                else:
+                    n_p_p_y = (r_y - temp_player_y_list[-1]) + r_y
+                    temp_player_y_list.append(n_p_p_y)
+                player_exp_y.append([n_p_p_x, n_p_p_y, 1])
 
-def copy_matrix(M):
-    """
-    Creates and returns a copy of a matrix.
-        :param M: The matrix to be copied
+        return player_exp_x + guard_exp_x + player_exp_y + guard_exp_y
 
-        :return: A copy of the given matrix
-    """
-    # Section 1: Get matrix dimensions
-    rows = len(M)
-    cols = len(M[0])
+    def other_quadrants(self, matrix):
+        q2 = deepcopy(matrix)
+        q2t = [-1, 1]
+        q2f = []
+        for j in range(len(q2)):
+            list = [q2[j][i] * q2t[i] for i in range(2)]
+            dist = self.get_dist(list[0], list[1])
 
-    # Section 2: Create a new matrix of zeros
-    MC = zeros_matrix(rows, cols)
+            if dist <= self.max_distance:
+                list.append(matrix[j][2])
+                q2f.append(list)
 
-    # Section 3: Copy values of M into the copy
-    for i in range(rows):
-        for j in range(cols):
-            MC[i][j] = M[i][j]
+        q3 = deepcopy(matrix)
+        q3t = [-1, -1]
+        q3f = []
+        for j in range(len(q3)):
+            list = [q3[j][i] * q3t[i] for i in range(2)]
+            dist = self.get_dist(list[0], list[1])
 
-    return MC
+            if dist <= self.max_distance:
+                list.append(matrix[j][2])
+                q3f.append(list)
 
+        q4 = deepcopy(matrix)
+        q4t = [1, -1]
+        q4f = []
+        for j in range(len(q3)):
+            list = [q4[j][i] * q4t[i] for i in range(2)]
+            dist = self.get_dist(list[0], list[1])
 
-def translate_y(matrix):
-    """Translate the matrix around the right wall of the room"""
-    og_matrix = copy_matrix(matrix)
-    for i in range(len(matrix)):
-        matrix[i].pop()
+            if dist <= self.max_distance:
+                list.append(matrix[j][2])
+                q4f.append(list)
 
-    for i in range(len(matrix)):
-        for k in range(len(og_matrix[i])):
-            matrix[i].append(og_matrix[i][-1 + -k])
-
-    return matrix
-
-
-def translate_x(matrix):
-    """Translate the matrix around the bottom wall of the room"""
-    og_matrix = copy_matrix(matrix)
-    matrix.pop()
-    for i in range(len(og_matrix) - 1, -1, -1):
-        matrix.append(og_matrix[i])
-
-    return matrix
-
-
-def expand_matrix(matrix):
-    """The 2 steps to expanding our original matrix"""
-    copy_s1 = copy_matrix(matrix)
-    step_1 = translate_y(copy_s1)
-    copy_s2 = copy_matrix(step_1)
-    step_2 = translate_x(copy_s2)
-    return step_2
-
-
-def get_max_matrix(matrix, max_row, max_col):
-    """If matrix is smaller then firing range, the universe will expand"""
-    while True:
-        if len(matrix) >= max_row and len(matrix[0]) >= max_col:
-            return matrix
-        else:
-            matrix = expand_matrix(matrix)
+        return q2f, q3f, q4f
 
 
 def filter_target_hit(matrix, player_col, player_row, max_distance):
@@ -104,72 +119,13 @@ def filter_target_hit(matrix, player_col, player_row, max_distance):
         dist = sqrt((matrix[i][1] - player_row) ** 2 + (matrix[i][0] -
         player_col) ** 2)
         angle = atan2(matrix[i][1] - player_row, matrix[i][0] - player_col)
-        test_a = max_distance > dist > 0
+        test_a = max_distance >= dist > 0
         test_b = angle not in target
         test_c = angle in target and dist < target[angle][1]
         if test_a and (test_b or test_c):
             target[angle] = [matrix[i], dist]
 
     return target
-
-
-def get_pos(matrix, pos, max_distance):
-    """Gets all locations for player and guard + filters all possibilities
-    that are out of firing range"""
-    target = []
-    for i in range(len(matrix)):
-        for j in range(len(matrix[0])):
-            if matrix[i][j] == 7 or matrix[i][j] == 1:
-                dist = sqrt((i - pos[0]) ** 2 + (j - pos[1]) ** 2)
-                if dist < max_distance:
-                    target.append([j, i, matrix[i][j]])
-    return target
-
-
-def other_quadrants(matrix, player_x_y, max_distance):
-    q2 = copy_matrix(matrix)
-    q2t = [-1, 1]
-    q2f = []
-    for j in range(len(q2)):
-        list = [q2[j][i]*q2t[i] for i in range(2)]
-        dist = sqrt((list[1] - player_x_y[1]) ** 2 + (list[0] -
-                                                      player_x_y[0]) ** 2)
-        if dist < max_distance:
-            list.append(matrix[j][2])
-            q2f.append(list)
-
-    q3 = copy_matrix(matrix)
-    q3t = [-1, -1]
-    q3f = []
-    for j in range(len(q3)):
-        list = [q3[j][i]*q3t[i] for i in range(2)]
-        dist = sqrt((list[1] - player_x_y[1]) ** 2 + (list[0] -
-                                                      player_x_y[0]) ** 2)
-        if dist < max_distance:
-            list.append(matrix[j][2])
-            q3f.append(list)
-
-    q4 = copy_matrix(matrix)
-    q4t = [1, -1]
-    q4f = []
-    for j in range(len(q3)):
-        list = [q4[j][i]*q4t[i] for i in range(2)]
-        dist = sqrt((list[1] - player_x_y[1]) ** 2 + (list[0] -
-                                                      player_x_y[0]) ** 2)
-        if dist < max_distance:
-            list.append(matrix[j][2])
-            q4f.append(list)
-
-    return q2f, q3f, q4f
-
-
-def trim(matrix, max_col, max_row):
-    matrix = matrix[:max_row]
-
-    for j in range(len(matrix)):
-        matrix[j] = matrix[j][:max_col]
-
-    return matrix
 
 
 def return_count(dict):
@@ -183,52 +139,31 @@ def return_count(dict):
 def solution(dimensions, your_position, guard_position, distance):
 
     # Makes a matrix by using room dims
-    start_time = time.time()
-    matrix = [[0 for _ in xrange(dimensions[0] + 1)] for _ in xrange(
-        dimensions[1] + 1)]
-    print("step 1: --- %s seconds ---" % (time.time() - start_time))
+    # start_time = time.time()
+    p = Room(dimensions, your_position, guard_position, distance)
 
-    start_time = time.time()
-    # Places the player and the guard position in the room
-    matrix[your_position[1]][your_position[0]] = 1
-    matrix[guard_position[1]][guard_position[0]] = 7
-    print("step 2: --- %s seconds ---" % (time.time() - start_time))
+    first_quadrant = p.get_first_quadrant()
 
-    start_time = time.time()
-    # Max possible rows and columns to a matrix, (your pos + distance)
-    max_row = (your_position[1]) + distance + 1
-    max_col = (your_position[0]) + distance + 1
-
-    # Get a gird for the 1th quadrant.
-    final_grid = get_max_matrix(matrix, max_row, max_col)
-    final_grid = trim(final_grid, max_col, max_row)
-    print("step 3: --- %s seconds ---" % (time.time() - start_time))
-
-    start_time = time.time()
     # Get all position in all quadrants
-    first_q_pos = get_pos(final_grid, your_position, distance)
-    q2, q3, q4 = other_quadrants(first_q_pos, your_position, distance)
-    final_list = first_q_pos + q2 + q3 + q4
-    print("step 4: --- %s seconds ---" % (time.time() - start_time))
 
-    start_time = time.time()
+    q2, q3, q4 = p.other_quadrants(first_quadrant)
+    final_list = first_quadrant + q2 + q3 + q4
+
     # Filters the Original player, and all unattainable guards
     final_dict = filter_target_hit(final_list, your_position[0],
                                    your_position[1], distance)
-
     count = return_count(final_dict)
-    print("step 4: --- %s seconds ---" % (time.time() - start_time))
     return count
 
 
 # Test cases found online
 
 #
-# dimensions = [10, 10]
-# captain_position = [4, 4]
-# badguy_position = [3, 3]
-# distance = 5000
-# # REAL answer = 739323
+dimensions = [10, 10]
+captain_position = [4, 4]
+badguy_position = [3, 3]
+distance = 5000
+# REAL answer = 739323
 
 
 
@@ -258,10 +193,10 @@ def solution(dimensions, your_position, guard_position, distance):
 # 0 secs and result 7
 
 
-dimensions = [1250, 1250]
-captain_position = [1000, 1000]
-badguy_position = [500, 400]
-distance = 10000
+# dimensions = [1250, 1250]
+# captain_position = [1000, 1000]
+# badguy_position = [500, 400]
+# distance = 10000
 # 204 sec and result of 196
 # v0.2 183 secs and result of 196
 

@@ -38,7 +38,7 @@ class Room:
         player_exp_y = []
         guard_exp_x = []
         guard_exp_y = []
-        # Loop expands along the x axies
+        # Loop expands along the x axis
         for i in range(0, num_copies_x + 1, 1):
             temp_player_y_list = []
             temp_guard_y_list = []
@@ -55,7 +55,8 @@ class Room:
             else:
                 n_g_p_x = (r_x - guard_exp_x[-1][0]) + r_x
             guard_exp_x.append([n_g_p_x, self.guard_y, 7])
-            #
+
+            # Loop expands along the x axis
             for j in range(1, num_copies_y + 1, 1):
                 r_y = self.room_y * j
                 if len(temp_guard_y_list) == 0:
@@ -77,6 +78,8 @@ class Room:
         return player_exp_x + guard_exp_x + player_exp_y + guard_exp_y
 
     def other_quadrants(self, matrix):
+        """Uses the list from the first quadrant and flips its to the other
+        3 quadrants"""
         q2 = deepcopy(matrix)
         q2t = [-1, 1]
         q2f = []
@@ -112,20 +115,21 @@ class Room:
 
         return q2f, q3f, q4f
 
+    def filter_target_hit(self, matrix):
+        """Uses a dict with angles as key
+        Filters by range and by distance of the same angle (closer always
+        wins)"""
+        target = {}
+        for i in range(len(matrix)):
+            dist = self.get_dist(matrix[i][0], matrix[i][1])
+            angle = self.get_angle(matrix[i][0], matrix[i][1])
+            test_a = self.max_distance >= dist > 0
+            test_b = angle not in target
+            test_c = angle in target and dist < target[angle][1]
+            if test_a and (test_b or test_c):
+                target[angle] = [matrix[i], dist]
 
-def filter_target_hit(matrix, player_col, player_row, max_distance):
-    target = {}
-    for i in range(len(matrix)):
-        dist = sqrt((matrix[i][1] - player_row) ** 2 + (matrix[i][0] -
-        player_col) ** 2)
-        angle = atan2(matrix[i][1] - player_row, matrix[i][0] - player_col)
-        test_a = max_distance >= dist > 0
-        test_b = angle not in target
-        test_c = angle in target and dist < target[angle][1]
-        if test_a and (test_b or test_c):
-            target[angle] = [matrix[i], dist]
-
-    return target
+        return target
 
 
 def return_count(dict):
@@ -137,21 +141,20 @@ def return_count(dict):
 
 
 def solution(dimensions, your_position, guard_position, distance):
-
-    # Makes a matrix by using room dims
-    # start_time = time.time()
+    # Makes a room instance with all the parameters given
     p = Room(dimensions, your_position, guard_position, distance)
 
+    # Generates all possible points in the first quadrant
     first_quadrant = p.get_first_quadrant()
 
-    # Get all position in all quadrants
-
+    # Get all position in all  other quadrants
     q2, q3, q4 = p.other_quadrants(first_quadrant)
     final_list = first_quadrant + q2 + q3 + q4
 
     # Filters the Original player, and all unattainable guards
-    final_dict = filter_target_hit(final_list, your_position[0],
-                                   your_position[1], distance)
+    final_dict = p.filter_target_hit(final_list)
+
+    # Returns count
     count = return_count(final_dict)
     return count
 

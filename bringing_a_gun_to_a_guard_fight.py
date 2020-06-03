@@ -1,4 +1,3 @@
-# I apologize for ever doubting MatLabs credibility as a programming language
 from math import sqrt, atan2, ceil
 from copy import deepcopy
 

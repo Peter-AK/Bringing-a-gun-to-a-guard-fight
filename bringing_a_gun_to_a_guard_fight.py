@@ -26,12 +26,10 @@ class Room:
         return angle
 
     def get_first_quadrant(self):
-        """gets the number of copies that need to be done along the axis
+        """Gets the number of copies that need to be done along the axis
         and gets all the guard and player coords"""
         num_copies_x = ceil(self.max_x / self.room_x)
-        num_copies_x = int(num_copies_x)
         num_copies_y = ceil(self.max_y / self.room_y)
-        num_copies_y = int(num_copies_y)
 
         player_exp_x = []
         player_exp_y = []

@@ -77,42 +77,20 @@ class Room:
         return player_exp_x + guard_exp_x + player_exp_y + guard_exp_y
 
     def other_quadrants(self, matrix):
-        """Uses the list from the first quadrant and flips its to the other
+        """Uses the list from the first quadrant and flips it to the other
         3 quadrants"""
-        q2 = deepcopy(matrix)
-        q2t = [-1, 1]
-        q2f = []
-        for j in range(len(q2)):
-            list = [q2[j][i] * q2t[i] for i in range(2)]
-            dist = self.get_dist(list[0], list[1])
+        points = []
+        multiples = [[-1, 1], [-1, -1], [1, -1]]
+        for i in range(len(multiples)):
+            for j in range(len(matrix)):
+                list = [matrix[j][k] * multiples[i][k] for k in range(2)]
+                dist = self.get_dist(list[0], list[1])
 
-            if dist <= self.max_distance:
-                list.append(matrix[j][2])
-                q2f.append(list)
+                if dist <= self.max_distance:
+                    list.append(matrix[j][2])
+                    points.append(list)
 
-        q3 = deepcopy(matrix)
-        q3t = [-1, -1]
-        q3f = []
-        for j in range(len(q3)):
-            list = [q3[j][i] * q3t[i] for i in range(2)]
-            dist = self.get_dist(list[0], list[1])
-
-            if dist <= self.max_distance:
-                list.append(matrix[j][2])
-                q3f.append(list)
-
-        q4 = deepcopy(matrix)
-        q4t = [1, -1]
-        q4f = []
-        for j in range(len(q3)):
-            list = [q4[j][i] * q4t[i] for i in range(2)]
-            dist = self.get_dist(list[0], list[1])
-
-            if dist <= self.max_distance:
-                list.append(matrix[j][2])
-                q4f.append(list)
-
-        return q2f, q3f, q4f
+        return points
 
     def filter_target_hit(self, matrix):
         """Uses a dict with angles as key
@@ -147,8 +125,8 @@ def solution(dimensions, your_position, guard_position, distance):
     first_quadrant = p.get_first_quadrant()
 
     # Get all position in all  other quadrants
-    q2, q3, q4 = p.other_quadrants(first_quadrant)
-    final_list = first_quadrant + q2 + q3 + q4
+    points = p.other_quadrants(first_quadrant)
+    final_list = first_quadrant + points
 
     # Filters the Original player, and all unattainable guards
     final_dict = p.filter_target_hit(final_list)
@@ -205,7 +183,3 @@ distance = 5000
 import time
 
 print solution(dimensions, captain_position, badguy_position, distance)
-
-
-
-

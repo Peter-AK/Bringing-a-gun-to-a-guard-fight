@@ -1,5 +1,4 @@
 from math import sqrt, atan2, ceil
-from copy import deepcopy
 
 
 class Room:
